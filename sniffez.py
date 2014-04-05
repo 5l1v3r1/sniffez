@@ -29,6 +29,8 @@ __author__ = 'b4d_tR1p - (b4d_tR1p@me.com)' ; 'Tmap - (cristian@mariolini.net)'
 __version__ = '0.6'
 __licence__ = 'GPL v3'
 
+import logging
+logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 from scapy.all import *
 import re
