@@ -1,27 +1,12 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-This is a simple http sniffer made in python 2.7
-
 Python module required => Scapy(http://www.secdev.org/projects/scapy/doc/index.html)
 
-Copyright® 2014 Alessandro Pucci - @b4d_tR1p ; Cristian 'Tmap' Mariolini - @mariolinic
+Cristian 'Tmap' Mariolini - @mariolinic
+Alessandro Pucci - @b4d_tR1p
 
-Date : 2014
-Licence : GPL v3 or any later version
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.
+Licence : GPL v3
 
 '''
 
@@ -44,7 +29,7 @@ cur=con.cursor()
 def create_db():
 	global cur
 	try:
-		create_db="""CREATE TABLE IF NOT EXISTS sniffez_log(log_id INTEGER PRIMARY KEY DEFAULT (1), log_time INTEGER NOT NULL, log_data TEXT, useragent TEXT, accept TEXT, acceptlang TEXT, acceptenc TEXT, referer TEXT, cookie TEXT);"""
+		create_db="""CREATE TABLE IF NOT EXISTS sniffez_log(log_id INTEGER PRIMARY KEY DEFAULT (1), log_time INTEGER NOT NULL, log_data TEXT, useragent TEXT, accept TEXT, acceptlang TEXT, acceptenc TEXT, referer TEXT, cookie TEXT, src TEXT, dst TEXT);"""
 		cur.execute(create_db)
 	except sqlite3.Error as e:
 		print e.args[0]
@@ -57,6 +42,16 @@ def sniffer():
 		parse_get(a)
 	x=x+1
 def parse_get(a):
+	src_match=re.search(u'\<IP.*src\=(.*?) ', str(a))
+	if src_match:
+		src=src_match.group(1)
+	else:
+		src=None
+	dst_match=re.search(u'\<IP.*dst\=(.*?) ', str(a))
+	if dst_match:
+		dst=dst_match.group(1)
+	else:
+		dst=None
 	get_regex = re.compile("GET.*\\\\r\\\\n\\\\r\\\\n")
 	base_request = get_regex.findall(str(a))
 	request_str = [request_str.replace('\\r\\n','\n') for request_str in base_request]
@@ -92,9 +87,11 @@ def parse_get(a):
 		cookie=None
 	if request_str:
 		try:
-			cur.execute("""INSERT INTO sniffez_log (log_id, log_time, log_data,useragent, accept, acceptlang,acceptenc, referer, cookie) VALUES(NULL, ?, ?,?,?,?,?,?,?)""",[int(time.time()),request_str[0],useragent, accept, acceptlang, acceptenc, referer, cookie])
+			cur.execute("""INSERT INTO sniffez_log (log_id, log_time, log_data,useragent, accept, acceptlang,acceptenc, referer, cookie,src,dst) VALUES(NULL, ?, ?,?,?,?,?,?,?,?,?)""",[int(time.time()),request_str[0],useragent, accept, acceptlang, acceptenc, referer, cookie,src,dst])
 			con.commit()
 			print request_str[0]
+			print str(src)
+			print str(dst)
 		except sqlite3.Error as e:
 			print "An error occurred:", e.args[0]
 create_db()
